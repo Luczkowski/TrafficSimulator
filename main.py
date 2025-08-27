@@ -1,164 +1,238 @@
-import tkinter as tk
-import threading
-import time
+import pygame
 import random
+from configuration import *
 
-# === KOLEJKI AUT ===
-traffic_straight = {'N': 0, 'S': 0, 'E': 0, 'W': 0}
-traffic_left = {'N': 0, 'S': 0, 'E': 0, 'W': 0}
+# --- Pygame init ---
+pygame.init()
+screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+pygame.display.set_caption("Symulacja pasa z zatrzymywaniem")
+clock = pygame.time.Clock()
 
-# === KOLEJKI PIESZYCH ===
-pedestrians = {'N': 0, 'S': 0, 'E': 0, 'W': 0}
+# --- Klasa Samochodu ---
+class Car:
+    def __init__(self, x, y, direction, color):
+        self.x = x
+        self.y = y
+        self.direction = direction
+        self.color = color
+        self.passed_stop = False
 
-active_phase = 'NS_straight'
-lock = threading.Lock()
+    def can_move(self, cars, stop_zone_active):
+        if self.passed_stop:
+            return True
 
-CIRCLE_RADIUS = 8
-UPDATE_INTERVAL = 1000  # ms
+        # Zatrzymanie przed strefą stop
+        if self.direction == 'E':
+            next_x = self.x + CAR_SPEED
+            if stop_zone_active and next_x + CAR_SIZE >= STOP_E:
+                return False
+        if self.direction == 'W':
+            next_x = self.x - CAR_SPEED
+            if stop_zone_active and next_x < STOP_W:
+                return False
+        if self.direction == 'S':
+            next_y = self.y + CAR_SPEED
+            if not stop_zone_active and next_y + CAR_SIZE >= STOP_S:
+                return False
+        if self.direction == 'N':
+            next_y = self.y - CAR_SPEED
+            if not stop_zone_active and next_y < STOP_N:
+                return False
 
-class TrafficApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Skrzyżowanie z lewoskrętami + piesi")
-        self.canvas = tk.Canvas(root, width=550, height=550, bg='lightgrey')
-        self.canvas.pack()
+        # Sprawdzenie odległości od samochodu z przodu
+        for other in cars:
+            if other is self:
+                continue
 
-        self.light_ids = {}
-        self.text_ids = {}
+            if self.direction == 'E':
+                if other.x > self.x:
+                    distance = other.x - (self.x + CAR_SIZE)
+                    if distance < 4:
+                        return False
+            if self.direction == 'W':
+                if other.x < self.x:
+                    distance = self.x - (other.x + CAR_SIZE)
+                    if distance < 4:
+                        return False
+            if self.direction == 'S':
+                if other.y > self.y:
+                    distance = other.y - (self.y + CAR_SIZE)
+                    if distance < 4:
+                        return False
+            if self.direction == 'N':
+                if other.y < self.y:
+                    distance = self.y - (other.y + CAR_SIZE)
+                    if distance < 4:
+                        return False
+        return True
 
-        self.ped_light_ids = {}  # światła dla pieszych
-        self.ped_text_ids = {}   # liczniki pieszych
+    def move(self):
+        if self.direction == 'E':
+            self.x += CAR_SPEED
+            if not self.passed_stop:
+                if self.x + CAR_SIZE >= STOP_E:
+                    self.passed_stop = True
+        if self.direction == 'W':
+            self.x -= CAR_SPEED
+            if not self.passed_stop:
+                if self.x < STOP_W:
+                    self.passed_stop = True
+        if self.direction == 'S':
+            self.y += CAR_SPEED
+            if not self.passed_stop:
+                if self.y + CAR_SIZE >= STOP_S:
+                    self.passed_stop = True
+        if self.direction == 'N':
+            self.y -= CAR_SPEED
+            if not self.passed_stop:
+                if self.y < STOP_N:
+                    self.passed_stop = True
 
-        self.draw_intersection()
-        self.update_gui()
+    def draw(self, surface):
+        rect = pygame.Rect(self.x, self.y, CAR_SIZE, CAR_SIZE)
+        pygame.draw.rect(surface, self.color, rect)
 
-    def draw_intersection(self):
-        self.canvas.create_rectangle(225, 0, 325, 550, fill='darkgrey')  # pion
-        self.canvas.create_rectangle(0, 225, 550, 325, fill='darkgrey')  # poziom
+    def is_offscreen(self):
+        return self.x > WINDOW_WIDTH or self.x < 0 - CAR_SIZE
 
-        positions = {
-            'N': (275, 90),
-            'S': (275, 460),
-            'E': (460, 275),
-            'W': (90, 275)
-        }
+def draw_traffic_lights(surface, stop_active):
+    # Światło dla E
+    e_color = RED if stop_active else GREEN
+    e_rect = pygame.Rect(STOP_E - LIGHT_SIZE - 5, Y_LANE + CAR_SIZE + 14, LIGHT_SIZE, LIGHT_SIZE)
+    pygame.draw.rect(surface, e_color, e_rect)
+    # Światło dla W
+    w_color = RED if stop_active else GREEN
+    w_rect = pygame.Rect(STOP_W + 5, Y_LANE - LIGHT_SIZE - CAR_SIZE - 14, LIGHT_SIZE, LIGHT_SIZE)
+    pygame.draw.rect(surface, w_color, w_rect)
+    # Światło dla S
+    s_color = GREEN if stop_active else RED
+    s_rect = pygame.Rect(X_LANE - LIGHT_SIZE - CAR_SIZE - 14, STOP_S - LIGHT_SIZE - 5, LIGHT_SIZE, LIGHT_SIZE)
+    pygame.draw.rect(surface, s_color, s_rect)
+    # Światło dla N
+    n_color = GREEN if stop_active else RED
+    n_rect = pygame.Rect(X_LANE + CAR_SIZE + 14, STOP_N + 5, LIGHT_SIZE, LIGHT_SIZE)
+    pygame.draw.rect(surface, n_color, n_rect)
 
-        for d, (x, y) in positions.items():
-            # światła aut
-            l_main = self.canvas.create_oval(x - CIRCLE_RADIUS, y - CIRCLE_RADIUS,
-                                             x + CIRCLE_RADIUS, y + CIRCLE_RADIUS,
-                                             fill='red')
-            l_left = self.canvas.create_oval(x - CIRCLE_RADIUS - 20, y - CIRCLE_RADIUS,
-                                             x + CIRCLE_RADIUS - 20, y + CIRCLE_RADIUS,
-                                             fill='red')
+# --- Inicjalizacja ---
+e_lane_cars = []
+w_lane_cars = []
+s_lane_cars = []
+n_lane_cars = []
 
-            txt = self.canvas.create_text(x, y + 28,
-                                          text=f"{d} →0 | ←0",
-                                          font=("Arial", 9), justify='center')
+e_spawn_timer = 0
+w_spawn_timer = 0
+s_spawn_timer = 0
+n_spawn_timer = 0
 
-            # światła pieszych
-            ped_x, ped_y = x + 30, y - 20
-            l_ped = self.canvas.create_rectangle(ped_x, ped_y,
-                                                 ped_x + 12, ped_y + 12,
-                                                 fill='red')
-            txt_ped = self.canvas.create_text(ped_x + 6, ped_y + 20,
-                                              text="0", font=("Arial", 8))
+stop_zone_active = False
+stop_timer = 0
+cycle_timer = 0
 
-            self.light_ids[d] = {'main': l_main, 'left': l_left}
-            self.text_ids[d] = txt
-            self.ped_light_ids[d] = l_ped
-            self.ped_text_ids[d] = txt_ped
+# --- Główna pętla ---
+running = True
+while running:
+    clock.tick(FPS)
+    screen.fill(GRAY)
 
-    def update_gui(self):
-        with lock:
-            for d in ['N', 'S', 'E', 'W']:
-                # światła aut
-                main_green = active_phase in ['NS_straight', 'EW_straight'] and d in active_phase
-                left_green = active_phase in ['NS_left', 'EW_left'] and d in active_phase
+    # --- Eventy ---
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
 
-                self.canvas.itemconfig(self.light_ids[d]['main'], fill='green' if main_green else 'red')
-                self.canvas.itemconfig(self.light_ids[d]['left'], fill='green' if left_green else 'red')
+    # --- Czerwone światło ---
+    if stop_zone_active:
+        stop_timer -= 1
+        if stop_timer <= 0:
+            stop_zone_active = False
+            cycle_timer = 0
+    else:
+        cycle_timer += 1
+        if cycle_timer >= STOP_INTERVAL:
+            stop_zone_active = True
+            stop_timer = STOP_DURATION
 
-                # licznik aut
-                c_straight = traffic_straight[d]
-                c_left = traffic_left[d]
-                self.canvas.itemconfig(self.text_ids[d], text=f"{d} ←{c_left} | →{c_straight}")
+    # --- Spawning aut ---
+    if e_spawn_timer <= 0:
+        if random.random() < 0.05:
+            car = Car(x=0, y=Y_LANE+5, direction='E', color=BLUE)
+            e_lane_cars.append(car)
+            e_spawn_timer = SPAWN_INTERVAL
+    else:
+        e_spawn_timer -= 1
 
-                # piesi
-                ped_green = d in pedestrian_green_dirs(active_phase)
-                self.canvas.itemconfig(self.ped_light_ids[d], fill='green' if ped_green else 'red')
-                self.canvas.itemconfig(self.ped_text_ids[d], text=str(pedestrians[d]))
+    if w_spawn_timer <= 0:
+        if random.random() < 0.05:
+            car = Car(x=WINDOW_WIDTH - CAR_SIZE, y=Y_LANE-CAR_SIZE-5, direction='W', color=RED)
+            w_lane_cars.append(car)
+            w_spawn_timer = SPAWN_INTERVAL
+    else:
+        w_spawn_timer -= 1
 
-        self.root.after(UPDATE_INTERVAL, self.update_gui)
+    if s_spawn_timer <= 0:
+        if random.random() < 0.05:
+            car = Car(x=X_LANE-CAR_SIZE-5, y=0, direction='S', color=GREEN)
+            s_lane_cars.append(car)
+            s_spawn_timer = SPAWN_INTERVAL
+    else:
+        s_spawn_timer -= 1
 
-# === FUNKCJE LOGICZNE ===
+    if n_spawn_timer <= 0:
+        if random.random() < 0.05:
+            car = Car(x=X_LANE+5, y=WINDOW_HEIGHT - CAR_SIZE, direction='N', color=YELLOW)
+            n_lane_cars.append(car)
+            n_spawn_timer = SPAWN_INTERVAL
+    else:
+        n_spawn_timer -= 1
 
-def pedestrian_green_dirs(phase):
-    """Zwraca listę kierunków, w których piesi mają zielone światło"""
-    if phase == 'NS_straight':
-        return ['E', 'W']
-    elif phase == 'EW_straight':
-        return ['N', 'S']
-    return []  # piesi nie mają zielonego w fazie lewoskrętów
+    # --- Ruch samochodów ---
+    for car in e_lane_cars:
+        if car.can_move(e_lane_cars, stop_zone_active):
+            car.move()
+        car.draw(screen)
 
-def car_generator():
-    directions = ['N', 'S', 'E', 'W']
-    while True:
-        time.sleep(random.uniform(0.4, 1.2))
-        d = random.choice(directions)
-        turn = random.choice(['straight', 'left'])
+    for car in w_lane_cars:
+        if car.can_move(w_lane_cars, stop_zone_active):
+            car.move()
+        car.draw(screen)
 
-        with lock:
-            if turn == 'straight':
-                traffic_straight[d] += 1
-            else:
-                traffic_left[d] += 1
+    for car in s_lane_cars:
+        if car.can_move(s_lane_cars, stop_zone_active):
+            car.move()
+        car.draw(screen)
 
-def pedestrian_generator():
-    directions = ['N', 'S', 'E', 'W']
-    while True:
-        time.sleep(random.uniform(2, 4))  # piesi rzadziej
-        d = random.choice(directions)
-        with lock:
-            pedestrians[d] += 1
+    for car in n_lane_cars:
+        if car.can_move(n_lane_cars, stop_zone_active):
+            car.move()
+        car.draw(screen)
 
-def traffic_light_controller():
-    global active_phase
-    phases = ['NS_straight', 'NS_left', 'EW_straight', 'EW_left']
-    while True:
-        for phase in phases:
-            with lock:
-                active_phase = phase
-            time.sleep(4)
+    # --- Usuwanie poza ekranem ---
+    e_lane_cars = [car for car in e_lane_cars if not car.is_offscreen()]
+    w_lane_cars = [car for car in w_lane_cars if not car.is_offscreen()]
 
-def car_remover():
-    while True:
-        with lock:
-            for d in ['N', 'S', 'E', 'W']:
-                if active_phase.endswith('straight') and d in active_phase:
-                    passed = min(traffic_straight[d], random.randint(1, 3))
-                    traffic_straight[d] -= passed
-                elif active_phase.endswith('left') and d in active_phase:
-                    passed = min(traffic_left[d], random.randint(1, 2))
-                    traffic_left[d] -= passed
-        time.sleep(1.5)
+    # --- Rysowanie strefy STOP ---
+    # # E
+    # pygame.draw.line(screen, WHITE, (STOP_E, E_LANE_Y - 4), (STOP_E, E_LANE_Y + CAR_SIZE + 2), 2)
+    # # W
+    # pygame.draw.line(screen, WHITE, (STOP_W, W_LANE_Y - 4), (STOP_W, W_LANE_Y + CAR_SIZE + 2), 2)
 
-def pedestrian_remover():
-    while True:
-        with lock:
-            dirs = pedestrian_green_dirs(active_phase)
-            for d in dirs:
-                passed = min(pedestrians[d], random.randint(1, 2))
-                pedestrians[d] -= passed
-        time.sleep(1.5)
+    # --- Linie pasów ---
+    # E
+    pygame.draw.line(screen, WHITE, (0, Y_LANE + 1), (WINDOW_WIDTH, Y_LANE + 1), 2)
+    pygame.draw.line(screen, WHITE, (0, Y_LANE + CAR_SIZE + 7), (WINDOW_WIDTH, Y_LANE + CAR_SIZE + 7), 2)
+    # W
+    pygame.draw.line(screen, WHITE, (0, Y_LANE - CAR_SIZE - 9), (WINDOW_WIDTH, Y_LANE - CAR_SIZE - 9), 2)
+    pygame.draw.line(screen, WHITE, (0, Y_LANE - 3), (WINDOW_WIDTH, Y_LANE - 3), 2)
+    # S
+    pygame.draw.line(screen, WHITE, (X_LANE - CAR_SIZE - 9, 0), (X_LANE - CAR_SIZE - 9, WINDOW_HEIGHT), 2)
+    pygame.draw.line(screen, WHITE, (X_LANE - 3, 0), (X_LANE - 3, WINDOW_HEIGHT), 2)
+    # N
+    pygame.draw.line(screen, WHITE, (X_LANE + 1, 0), (X_LANE + 1, WINDOW_HEIGHT), 2)
+    pygame.draw.line(screen, WHITE, (X_LANE + CAR_SIZE + 7, 0), (X_LANE + CAR_SIZE + 7, WINDOW_HEIGHT), 2)
 
-# === URUCHOMIENIE WĄTKÓW I GUI ===
-threading.Thread(target=car_generator, daemon=True).start()
-threading.Thread(target=pedestrian_generator, daemon=True).start()
-threading.Thread(target=traffic_light_controller, daemon=True).start()
-threading.Thread(target=car_remover, daemon=True).start()
-threading.Thread(target=pedestrian_remover, daemon=True).start()
+    # pygame.draw.line(screen, RED, (0, Y_LANE-1), (WINDOW_WIDTH, Y_LANE-1), 2)
+    # pygame.draw.line(screen, RED, (X_LANE-1, 0), (X_LANE-1, WINDOW_HEIGHT), 2)
 
-root = tk.Tk()
-app = TrafficApp(root)
-root.mainloop()
+    draw_traffic_lights(screen, stop_zone_active)
+    pygame.display.flip()
+
+pygame.quit()

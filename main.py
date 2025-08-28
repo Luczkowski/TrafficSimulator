@@ -1,3 +1,5 @@
+from tkinter.constants import RIGHT
+
 import pygame
 import random
 from configuration import *
@@ -16,6 +18,7 @@ class Car:
         self.direction = direction
         self.color = color
         self.passed_stop = False
+        self.turn = random.choice(['straight', 'right'])
 
     def can_move(self, cars, green_light):
         if self.passed_stop:
@@ -73,21 +76,37 @@ class Car:
             if not self.passed_stop:
                 if self.x + CAR_SIZE >= STOP_E:
                     self.passed_stop = True
+            else:
+                if self.turn == 'right' and self.x > STOP_E + 7:
+                    self.direction = 'S'
+                    self.turn = 'straight'
         if self.direction == 'W':
             self.x -= CAR_SPEED
             if not self.passed_stop:
                 if self.x < STOP_W:
                     self.passed_stop = True
+            else:
+                if self.turn == 'right' and self.x + CAR_SIZE < STOP_W - 7:
+                    self.direction = 'N'
+                    self.turn = 'straight'
         if self.direction == 'S':
             self.y += CAR_SPEED
             if not self.passed_stop:
                 if self.y + CAR_SIZE >= STOP_S:
                     self.passed_stop = True
+            else:
+                if self.turn == 'right' and self.y > STOP_S + 7:
+                    self.direction = 'W'
+                    self.turn = 'straight'
         if self.direction == 'N':
             self.y -= CAR_SPEED
             if not self.passed_stop:
                 if self.y < STOP_N:
                     self.passed_stop = True
+            else:
+                if self.turn == 'right' and self.y + CAR_SIZE < STOP_N - 7:
+                    self.direction = 'E'
+                    self.turn = 'straight'
 
     def draw(self, surface):
         rect = pygame.Rect(self.x, self.y, CAR_SIZE, CAR_SIZE)

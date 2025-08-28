@@ -1,6 +1,7 @@
 ## Symulator skrzyżowania
 Symulator obrazuje najprostsze skrzyżowanie dwóch dróg, każda z jednym pasem.
 Z każdego kierunku pojawiają się samochody w losowych odstępach czasu.
+Samochody mogą skręcać w prawo jechać prosto.\
 Samochody zatrzymują się przed skrzyżowaniem, a ruch odbywa się w sposób
 wahadłowy (dla kierunków NS i EW).\
 Zielone światło dla obu kierunków trwa 3 sekundy.

@@ -6,7 +6,7 @@ FPS = 60
 
 CAR_SIZE = 20
 CAR_SPEED = 2
-SPAWN_INTERVAL = 60
+SPAWN_INTERVAL = 80
 
 LIGHT_SIZE = 20
 
@@ -19,8 +19,15 @@ STOP_W = X_LANE + CAR_SIZE + 14
 STOP_S = Y_LANE - CAR_SIZE - 14
 STOP_N = Y_LANE + CAR_SIZE + 14
 
-STOP_DURATION = 200  # czas trwania czerwonego światła w klatkach
-STOP_INTERVAL = 200  # co ile klatek pojawia się czerwone światło
+STOP_DURATION = FPS * 4  # czas trwania czerwonego światła w sekundach
+STOP_INTERVAL = FPS * 4  # co ile sekund pojawia się czerwone światło
+
+# Czas trwania zielonego światła (w klatkach, przy FPS = 60)
+GREEN_TIME_E = 3 * FPS
+GREEN_TIME_W = 3 * FPS
+GREEN_TIME_S = 3 * FPS
+GREEN_TIME_N = 3 * FPS
+PAUSE_TIME = FPS
 
 # Kolory
 BLACK = (0, 0, 0)

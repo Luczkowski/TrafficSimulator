@@ -17,26 +17,27 @@ class Car:
         self.color = color
         self.passed_stop = False
 
-    def can_move(self, cars, stop_zone_active):
+    def can_move(self, cars, green_light):
         if self.passed_stop:
             return True
 
-        # Zatrzymanie przed strefą stop
+        # Jeżeli jest czerwone i w następnej klatce samochód przekroczyłby linię stop
+        # to nie może jechać dalej
         if self.direction == 'E':
             next_x = self.x + CAR_SPEED
-            if stop_zone_active and next_x + CAR_SIZE >= STOP_E:
+            if not green_light and next_x + CAR_SIZE >= STOP_E:
                 return False
         if self.direction == 'W':
             next_x = self.x - CAR_SPEED
-            if stop_zone_active and next_x < STOP_W:
+            if not green_light and next_x < STOP_W:
                 return False
         if self.direction == 'S':
             next_y = self.y + CAR_SPEED
-            if not stop_zone_active and next_y + CAR_SIZE >= STOP_S:
+            if not green_light and next_y + CAR_SIZE >= STOP_S:
                 return False
         if self.direction == 'N':
             next_y = self.y - CAR_SPEED
-            if not stop_zone_active and next_y < STOP_N:
+            if not green_light and next_y < STOP_N:
                 return False
 
         # Sprawdzenie odległości od samochodu z przodu
@@ -93,23 +94,23 @@ class Car:
         pygame.draw.rect(surface, self.color, rect)
 
     def is_offscreen(self):
-        return self.x > WINDOW_WIDTH or self.x < 0 - CAR_SIZE
+        return self.x > WINDOW_WIDTH or self.x < 0 - CAR_SIZE or self.y > WINDOW_HEIGHT or self.y < 0 - CAR_SIZE
 
-def draw_traffic_lights(surface, stop_active):
+def draw_traffic_lights(surface, green_light, direction):
     # Światło dla E
-    e_color = RED if stop_active else GREEN
+    e_color = GREEN if green_light and direction == 'W' else RED
     e_rect = pygame.Rect(STOP_E - LIGHT_SIZE - 5, Y_LANE + CAR_SIZE + 14, LIGHT_SIZE, LIGHT_SIZE)
     pygame.draw.rect(surface, e_color, e_rect)
     # Światło dla W
-    w_color = RED if stop_active else GREEN
+    w_color = GREEN if green_light and direction == 'W' else RED
     w_rect = pygame.Rect(STOP_W + 5, Y_LANE - LIGHT_SIZE - CAR_SIZE - 14, LIGHT_SIZE, LIGHT_SIZE)
     pygame.draw.rect(surface, w_color, w_rect)
     # Światło dla S
-    s_color = GREEN if stop_active else RED
+    s_color = GREEN if green_light and direction == 'N' else RED
     s_rect = pygame.Rect(X_LANE - LIGHT_SIZE - CAR_SIZE - 14, STOP_S - LIGHT_SIZE - 5, LIGHT_SIZE, LIGHT_SIZE)
     pygame.draw.rect(surface, s_color, s_rect)
     # Światło dla N
-    n_color = GREEN if stop_active else RED
+    n_color = GREEN if green_light and direction == 'N' else RED
     n_rect = pygame.Rect(X_LANE + CAR_SIZE + 14, STOP_N + 5, LIGHT_SIZE, LIGHT_SIZE)
     pygame.draw.rect(surface, n_color, n_rect)
 
@@ -124,9 +125,10 @@ w_spawn_timer = 0
 s_spawn_timer = 0
 n_spawn_timer = 0
 
-stop_zone_active = False
-stop_timer = 0
-cycle_timer = 0
+green_light_active = False
+current_direction = 'N'
+light_timer = 0
+pause_timer = 0
 
 # --- Główna pętla ---
 running = True
@@ -139,17 +141,29 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # --- Czerwone światło ---
-    if stop_zone_active:
-        stop_timer -= 1
-        if stop_timer <= 0:
-            stop_zone_active = False
-            cycle_timer = 0
+    if pause_timer > 0:
+        pause_timer -= 1
+        green_light_active = False
     else:
-        cycle_timer += 1
-        if cycle_timer >= STOP_INTERVAL:
-            stop_zone_active = True
-            stop_timer = STOP_DURATION
+        if light_timer > 0:
+            light_timer -= 1
+            green_light_active = True
+        else:
+            if current_direction == 'N':
+                current_direction = 'W'
+                light_timer = GREEN_TIME_W
+            elif current_direction == 'W':
+                current_direction = 'N'
+                light_timer = GREEN_TIME_N
+            # elif current_direction == 'S':
+            #     current_direction = 'E'
+            #     light_timer = GREEN_TIME_E
+            # elif current_direction == 'E':
+            #     current_direction = 'N'
+            #     light_timer = GREEN_TIME_N
+
+            pause_timer = PAUSE_TIME
+            green_light_active = False
 
     # --- Spawning aut ---
     if e_spawn_timer <= 0:
@@ -186,34 +200,30 @@ while running:
 
     # --- Ruch samochodów ---
     for car in e_lane_cars:
-        if car.can_move(e_lane_cars, stop_zone_active):
+        if car.can_move(e_lane_cars, green_light_active and current_direction == 'W'):
             car.move()
         car.draw(screen)
 
     for car in w_lane_cars:
-        if car.can_move(w_lane_cars, stop_zone_active):
+        if car.can_move(w_lane_cars, green_light_active and current_direction == 'W'):
             car.move()
         car.draw(screen)
 
     for car in s_lane_cars:
-        if car.can_move(s_lane_cars, stop_zone_active):
+        if car.can_move(s_lane_cars, green_light_active and current_direction == 'N'):
             car.move()
         car.draw(screen)
 
     for car in n_lane_cars:
-        if car.can_move(n_lane_cars, stop_zone_active):
+        if car.can_move(n_lane_cars, green_light_active and current_direction == 'N'):
             car.move()
         car.draw(screen)
 
     # --- Usuwanie poza ekranem ---
     e_lane_cars = [car for car in e_lane_cars if not car.is_offscreen()]
     w_lane_cars = [car for car in w_lane_cars if not car.is_offscreen()]
-
-    # --- Rysowanie strefy STOP ---
-    # # E
-    # pygame.draw.line(screen, WHITE, (STOP_E, E_LANE_Y - 4), (STOP_E, E_LANE_Y + CAR_SIZE + 2), 2)
-    # # W
-    # pygame.draw.line(screen, WHITE, (STOP_W, W_LANE_Y - 4), (STOP_W, W_LANE_Y + CAR_SIZE + 2), 2)
+    s_lane_cars = [car for car in s_lane_cars if not car.is_offscreen()]
+    n_lane_cars = [car for car in n_lane_cars if not car.is_offscreen()]
 
     # --- Linie pasów ---
     # E
@@ -229,10 +239,7 @@ while running:
     pygame.draw.line(screen, WHITE, (X_LANE + 1, 0), (X_LANE + 1, WINDOW_HEIGHT), 2)
     pygame.draw.line(screen, WHITE, (X_LANE + CAR_SIZE + 7, 0), (X_LANE + CAR_SIZE + 7, WINDOW_HEIGHT), 2)
 
-    # pygame.draw.line(screen, RED, (0, Y_LANE-1), (WINDOW_WIDTH, Y_LANE-1), 2)
-    # pygame.draw.line(screen, RED, (X_LANE-1, 0), (X_LANE-1, WINDOW_HEIGHT), 2)
-
-    draw_traffic_lights(screen, stop_zone_active)
+    draw_traffic_lights(screen, green_light_active, current_direction)
     pygame.display.flip()
 
 pygame.quit()

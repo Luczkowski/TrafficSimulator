@@ -17,5 +17,4 @@ W realnym świecie rozwiązaniem tego problemu są osobne pasy do skrętu w lewo
 
 ## TO DO
 1. UI do zmiany częstotliwości pojawiania się samochodów (osobne dla każdego pasa)
-2. Statystyki przepustowości
-3. Priorytetyzacja w razie kolizji
+2. Priorytetyzacja w razie kolizji

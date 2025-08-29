@@ -1,5 +1,3 @@
-from os import EX_OK
-
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
 FPS = 60
@@ -8,19 +6,25 @@ CAR_SIZE = 20
 CAR_SPEED = 2
 SPAWN_INTERVAL = 60
 
-LIGHT_SIZE = 20
+LIGHT_SIZE = 10
 
-Y_LANE = WINDOW_HEIGHT / 2
-X_LANE = WINDOW_WIDTH / 2
+E_LANE = WINDOW_HEIGHT / 2 + 48
+W_LANE = WINDOW_HEIGHT / 2 - CAR_SIZE
+S_LANE = WINDOW_WIDTH / 2 - CAR_SIZE
+N_LANE = WINDOW_WIDTH / 2 + 48
 
 # punkty zatrzymania
-STOP_E = X_LANE - CAR_SIZE - 14
-STOP_W = X_LANE + CAR_SIZE + 14
-STOP_S = Y_LANE - CAR_SIZE - 14
-STOP_N = Y_LANE + CAR_SIZE + 14
+STOP_E = S_LANE
+STOP_W = N_LANE + CAR_SIZE
+STOP_S = W_LANE
+STOP_N = E_LANE + CAR_SIZE
 
-STOP_DURATION = 200  # czas trwania czerwonego światła w klatkach
-STOP_INTERVAL = 200  # co ile klatek pojawia się czerwone światło
+# Czas trwania zielonego światła (w klatkach, przy FPS = 60)
+GREEN_TIME_E = 3 * FPS
+GREEN_TIME_W = 3 * FPS
+GREEN_TIME_S = 3 * FPS
+GREEN_TIME_N = 3 * FPS
+PAUSE_TIME = FPS
 
 # Kolory
 BLACK = (0, 0, 0)

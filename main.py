@@ -53,7 +53,7 @@ def can_spawn_new_car(x, y, cars):
 
 def spawn_car(x, y, direction, color, cars):
     if can_spawn_new_car(x, y, cars):
-        car = Car(x, y, direction, color)
+        car = Car(x, y, direction, color, increment_func=increment_cars_passed)
         cars.append(car)
         return True
     return False
@@ -70,6 +70,14 @@ green_light_active = False
 current_direction = 'N'
 light_timer = 0
 pause_timer = 0
+cars_per_seconds = 0
+total_cars_passed = 0
+elapsed_time = 0
+second_timer = 0
+
+def increment_cars_passed():
+    global total_cars_passed
+    total_cars_passed += 1
 
 # --- Główna pętla ---
 running = True
@@ -149,6 +157,17 @@ while running:
 
     # --- Usuwanie poza ekranem ---
     cars = [car for car in cars if not car.is_offscreen()]
+
+    second_timer += 1 / FPS
+    elapsed_time += 1 / FPS
+
+    if second_timer >= 1:
+        cars_per_seconds = (total_cars_passed / elapsed_time) if elapsed_time > 0 else 0
+        second_timer = 0
+
+    font = pygame.font.SysFont('Arial', 12)
+    text = font.render(f'Przepustowość: {cars_per_seconds:.2f} auta/s', True, WHITE)
+    screen.blit(text, (10, 10))
 
     draw_roads(screen)
     draw_traffic_lights(screen, green_light_active, current_direction)

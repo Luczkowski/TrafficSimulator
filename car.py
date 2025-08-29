@@ -4,13 +4,14 @@ from configuration import *
 
 # --- Klasa Samochodu ---
 class Car:
-    def __init__(self, x, y, direction, color):
+    def __init__(self, x, y, direction, color,increment_func):
         self.x = x
         self.y = y
         self.direction = direction
         self.color = color
         self.passed_stop = False
         self.turn = random.choice(['straight', 'right', 'left'])
+        self.increment_func = increment_func
 
     def get_future_rect(self):
         future_x, future_y = self.x, self.y
@@ -66,11 +67,14 @@ class Car:
         return True
 
     def move(self):
+        global car_passed
+
         if self.direction == 'E':
             self.x += CAR_SPEED
             if not self.passed_stop:
                 if self.x + CAR_SIZE >= STOP_E:
                     self.passed_stop = True
+                    self.increment_func()
             else:
                 if self.turn == 'right' and self.x == S_LANE:
                     self.direction = 'S'
@@ -83,6 +87,7 @@ class Car:
             if not self.passed_stop:
                 if self.x < STOP_W:
                     self.passed_stop = True
+                    self.increment_func()
             else:
                 if self.turn == 'right' and self.x == N_LANE:
                     self.direction = 'N'
@@ -95,6 +100,7 @@ class Car:
             if not self.passed_stop:
                 if self.y + CAR_SIZE >= STOP_S:
                     self.passed_stop = True
+                    self.increment_func()
             else:
                 if self.turn == 'right' and self.y == W_LANE:
                     self.direction = 'W'
@@ -107,6 +113,7 @@ class Car:
             if not self.passed_stop:
                 if self.y < STOP_N:
                     self.passed_stop = True
+                    self.increment_func()
             else:
                 if self.turn == 'right' and self.y == E_LANE:
                     self.direction = 'E'

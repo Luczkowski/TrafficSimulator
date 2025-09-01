@@ -1,46 +1,16 @@
 import pygame
 import random
+from collections import deque
+
 from configuration import *
 from car import Car
+from drawing import draw_roads, draw_traffic_lights, draw_sidebar, draw_slider
 
 # --- Pygame init ---
 pygame.init()
-screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+screen = pygame.display.set_mode((WINDOW_WIDTH + 200, WINDOW_HEIGHT))
 pygame.display.set_caption("Symulacja pasa z zatrzymywaniem")
 clock = pygame.time.Clock()
-
-# --- Rysowanie ---
-def draw_traffic_lights(screen, green_light, direction):
-    # Światło dla E
-    e_color = GREEN if green_light and direction == 'W' else RED
-    e_rect = pygame.Rect(STOP_E - CAR_SIZE, E_LANE + CAR_SIZE + 2, LIGHT_SIZE, LIGHT_SIZE)
-    pygame.draw.rect(screen, e_color, e_rect)
-    # Światło dla W
-    w_color = GREEN if green_light and direction == 'W' else RED
-    w_rect = pygame.Rect(STOP_W + CAR_SIZE - LIGHT_SIZE, W_LANE - LIGHT_SIZE, LIGHT_SIZE, LIGHT_SIZE)
-    pygame.draw.rect(screen, w_color, w_rect)
-    # Światło dla S
-    s_color = GREEN if green_light and direction == 'N' else RED
-    s_rect = pygame.Rect(S_LANE - LIGHT_SIZE, STOP_S - CAR_SIZE, LIGHT_SIZE, LIGHT_SIZE)
-    pygame.draw.rect(screen, s_color, s_rect)
-    # Światło dla N
-    n_color = GREEN if green_light and direction == 'N' else RED
-    n_rect = pygame.Rect(N_LANE + CAR_SIZE + 2, STOP_N + CAR_SIZE - LIGHT_SIZE, LIGHT_SIZE, LIGHT_SIZE)
-    pygame.draw.rect(screen, n_color, n_rect)
-
-def draw_roads(screen):
-    # E
-    pygame.draw.line(screen, WHITE, (0, E_LANE), (WINDOW_WIDTH, E_LANE), 2)
-    pygame.draw.line(screen, WHITE, (0, E_LANE + CAR_SIZE), (WINDOW_WIDTH, E_LANE + CAR_SIZE), 2)
-    # W
-    pygame.draw.line(screen, WHITE, (0, W_LANE), (WINDOW_WIDTH, W_LANE), 2)
-    pygame.draw.line(screen, WHITE, (0, W_LANE + CAR_SIZE), (WINDOW_WIDTH, W_LANE + CAR_SIZE), 2)
-    # S
-    pygame.draw.line(screen, WHITE, (S_LANE, 0), (S_LANE, WINDOW_HEIGHT), 2)
-    pygame.draw.line(screen, WHITE, (S_LANE + CAR_SIZE, 0), (S_LANE + CAR_SIZE, WINDOW_HEIGHT), 2)
-    # N
-    pygame.draw.line(screen, WHITE, (N_LANE, 0), (N_LANE, WINDOW_HEIGHT), 2)
-    pygame.draw.line(screen, WHITE, (N_LANE + CAR_SIZE, 0), (N_LANE + CAR_SIZE, WINDOW_HEIGHT), 2)
 
 # --- Spawn samochodów ---
 def can_spawn_new_car(x, y, cars):
@@ -74,10 +44,18 @@ cars_per_seconds = 0
 total_cars_passed = 0
 elapsed_time = 0
 second_timer = 0
+car_times = deque()
+
+def handle_slider(event, spawn_interval, y_pos):
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+    if WINDOW_WIDTH + 20 <= mouse_x <= WINDOW_WIDTH + 180 and y_pos <= mouse_y <= y_pos + 10:
+        new_interval = max(min(mouse_x - (WINDOW_WIDTH + 20), 200 - 10), 10)
+        return (new_interval * (200 - 10) // (WINDOW_WIDTH + 180 - (WINDOW_WIDTH + 20))) + 10
+    return spawn_interval
 
 def increment_cars_passed():
     global total_cars_passed
-    total_cars_passed += 1
+    car_times.append(elapsed_time)
 
 # --- Główna pętla ---
 running = True
@@ -89,6 +67,11 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            E_SPAWN_INTERVAL = handle_slider(event, E_SPAWN_INTERVAL, 80)
+            W_SPAWN_INTERVAL = handle_slider(event, W_SPAWN_INTERVAL, 120)
+            S_SPAWN_INTERVAL = handle_slider(event, S_SPAWN_INTERVAL, 160)
+            N_SPAWN_INTERVAL = handle_slider(event, N_SPAWN_INTERVAL, 200)
 
     # --- Zmiana świateł ---
     if pause_timer > 0:
@@ -118,30 +101,29 @@ while running:
     # --- Spawn samochodów ---
     if e_spawn_timer <= 0:
         if random.random() < 0.05:
-            spawn_car(0-CAR_SIZE, E_LANE, 'E', BLUE, cars)
-            e_spawn_timer = SPAWN_INTERVAL
+            spawn_car(0 - CAR_SIZE, E_LANE, 'E', BLUE, cars)
+            e_spawn_timer = E_SPAWN_INTERVAL
     else:
         e_spawn_timer -= 1
 
     if w_spawn_timer <= 0:
         if random.random() < 0.05:
             spawn_car(WINDOW_WIDTH, W_LANE, 'W', RED, cars)
-            w_spawn_timer = SPAWN_INTERVAL
+            w_spawn_timer = W_SPAWN_INTERVAL
     else:
         w_spawn_timer -= 1
 
     if s_spawn_timer <= 0:
         if random.random() < 0.05:
-
-            spawn_car(S_LANE, 0-CAR_SIZE, 'S', GREEN, cars)
-            s_spawn_timer = SPAWN_INTERVAL
+            spawn_car(S_LANE, 0 - CAR_SIZE, 'S', GREEN, cars)
+            s_spawn_timer = S_SPAWN_INTERVAL
     else:
         s_spawn_timer -= 1
 
     if n_spawn_timer <= 0:
         if random.random() < 0.05:
             spawn_car(N_LANE, WINDOW_HEIGHT, 'N', YELLOW, cars)
-            n_spawn_timer = SPAWN_INTERVAL
+            n_spawn_timer = N_SPAWN_INTERVAL
     else:
         n_spawn_timer -= 1
 
@@ -162,15 +144,23 @@ while running:
     elapsed_time += 1 / FPS
 
     if second_timer >= 1:
-        cars_per_seconds = (total_cars_passed / elapsed_time) if elapsed_time > 0 else 0
+        while car_times and elapsed_time - car_times[0] > 15:
+            car_times.popleft()
+        cars_last_5s = len(car_times)
+        cars_per_seconds = cars_last_5s / 15
         second_timer = 0
 
-    font = pygame.font.SysFont('Arial', 12)
+    font = pygame.font.SysFont('Arial', 16)
     text = font.render(f'Przepustowość: {cars_per_seconds:.2f} auta/s', True, WHITE)
     screen.blit(text, (10, 10))
 
     draw_roads(screen)
     draw_traffic_lights(screen, green_light_active, current_direction)
+    draw_sidebar(screen)
+    draw_slider(screen, E_SPAWN_INTERVAL, 80, "Niebieskie")
+    draw_slider(screen, W_SPAWN_INTERVAL, 120, "Czerwone")
+    draw_slider(screen, S_SPAWN_INTERVAL, 160, "Zielone")
+    draw_slider(screen, N_SPAWN_INTERVAL, 200, "Żółte")
     pygame.display.flip()
 
 pygame.quit()

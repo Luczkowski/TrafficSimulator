@@ -1,21 +1,21 @@
 import time, pygame
 
 class Light:
-    def __init__(self, x, y, time_true=2, time_false=2):
+    def __init__(self, x, y, phases=None):
         self.x = x
         self.y = y
-        self.state = True
-        self.time_true = time_true
-        self.time_false = time_false
+        self.phases = phases if phases else [(2, True), (2, False)]
+        self.current_phase = 0
+        self.state = self.phases[0][1]
         self.last_toggle_time = time.time()
-        self.state_change_time = self.time_false
 
     def toggle_state(self):
         current_time = time.time()
-        if current_time - self.last_toggle_time >= self.state_change_time:
-            self.state = not self.state
+        phase_duration, _ = self.phases[self.current_phase]
+        if current_time - self.last_toggle_time >= phase_duration:
+            self.current_phase = (self.current_phase + 1) % len(self.phases)
+            self.state = self.phases[self.current_phase][1]
             self.last_toggle_time = current_time
-            self.state_change_time = self.time_true if self.state else self.time_false
 
     def draw(self, surface):
         color = (0, 255, 0) if self.state else (255, 0, 0)

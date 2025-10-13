@@ -20,8 +20,10 @@ roads = [
 ]
 
 stops = [
-    Light(100, 100, 2, 2),
-    Light(200, 100, 3, 1),
+    Light(370, E_LANE + 8, phases=[(2, True), (4, False)]),
+    Light(480, W_LANE + 8, phases=[(2, True), (4, False)]),
+    Light(S_LANE + 8, 270, phases=[(3, False), (2, True), (1, False)]),
+    Light(N_LANE + 8, 380, phases=[(3, False), (2, True), (1, False)]),
 ]
 
 # --- Główna pętla ---

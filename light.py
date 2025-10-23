@@ -2,6 +2,7 @@ import time
 import pygame
 from configuration import *
 
+
 class Light:
     def __init__(self, x, y, phases=None, automatic_control=True):
         self.x = x
@@ -24,3 +25,9 @@ class Light:
     def draw(self, surface):
         color = GREEN if self.state else RED
         pygame.draw.rect(surface, color, (self.x, self.y, 8, 8))
+
+    def get_state(self):
+        return self.state
+    
+    def set_state(self, state: bool):
+        self.state = state

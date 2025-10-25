@@ -81,7 +81,7 @@ class RestartButton(Button):
 class ToggleAutomaticControlButton(Button):
     def __init__(self, get_automatic_control, set_automatic_control):
         super().__init__(
-            20,
+            WINDOW_WIDTH - 200,
             20,
             160,
             40,

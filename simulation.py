@@ -58,8 +58,21 @@ class Simulation:
             ToggleAutomaticControlButton(
                 self.get_automatic_control, self.set_automatic_control
             ),
-            ToggleLightButton(320, 20, 120, 40, ),
         ]
+
+        self.light_buttons = []
+        button_x = WINDOW_WIDTH-200
+        button_y = 80
+        for i, light in enumerate(self.stops):
+            button = ToggleLightButton(
+                x=button_x,
+                y=button_y + i * 50,
+                width=160,
+                height=40,
+                text_on=f"Light {i+1} ON",
+                text_off=f"Light {i+1} OFF",
+            )
+            self.light_buttons.append((button, light))
 
     # --- Getters & setters ---
     def get_running(self):
@@ -85,6 +98,10 @@ class Simulation:
     def update(self, screen):
         for gui_element in self.gui:
             gui_element.draw(screen)
+
+        if not self.automatic_control:
+            for button, _ in self.light_buttons:
+                button.draw(screen)
 
         if self.running:
             for road in self.roads:

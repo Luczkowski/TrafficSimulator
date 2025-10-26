@@ -179,3 +179,47 @@ class ToggleLightButton(ToggleButton):
                     self.text = self.text_off
                     self.color = self.color_off
                     self.hover_color = self.hover_color_off
+
+class RangeInput:
+    def __init__(self, x, y, width, height, min_val, max_val, start_val, label=""):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.min_val = min_val
+        self.max_val = max_val
+        self.value = start_val
+        self.label = label
+        self.slider_rect = pygame.Rect(x, y, width, height)
+        self.knob_x = self._value_to_x(start_val)
+        self.dragging = False
+        self.font = pygame.font.SysFont(None, 22)
+
+    def _value_to_x(self, value):
+        """Convert slider value to x-position."""
+        return self.x + ((value - self.min_val) / (self.max_val - self.min_val)) * self.width
+
+    def _x_to_value(self, x):
+        """Convert x-position back to slider value."""
+        ratio = (x - self.x) / self.width
+        return self.min_val + ratio * (self.max_val - self.min_val)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if abs(event.pos[0] - self.knob_x) < 10 and self.slider_rect.collidepoint(event.pos):
+                self.dragging = True
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self.dragging = False
+        elif event.type == pygame.MOUSEMOTION and self.dragging:
+            self.knob_x = max(self.x, min(event.pos[0], self.x + self.width))
+            self.value = round(self._x_to_value(self.knob_x), 2)
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, (200, 200, 200), self.slider_rect)
+        pygame.draw.rect(screen, (0, 0, 0), self.slider_rect, 2)
+
+        pygame.draw.circle(screen, (100, 100, 255), (int(self.knob_x), self.y + self.height // 2), 8)
+
+        label_text = f"{self.label}: {self.value:.1f} cars/s"
+        text_surf = self.font.render(label_text, True, (0, 0, 0))
+        screen.blit(text_surf, (self.x, self.y - 25))

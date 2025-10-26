@@ -9,6 +9,7 @@ from components.gui import (
     ToggleAutomaticControlButton,
     ToggleButton,
     ToggleLightButton,
+    RangeInput,
 )
 
 
@@ -61,7 +62,7 @@ class Simulation:
         ]
 
         self.light_buttons = []
-        button_x = WINDOW_WIDTH-200
+        button_x = WINDOW_WIDTH - 200
         button_y = 80
         for i, light in enumerate(self.stops):
             button = ToggleLightButton(
@@ -73,6 +74,21 @@ class Simulation:
                 text_off=f"Light {i+1} OFF",
             )
             self.light_buttons.append((button, light))
+
+        # --- Współczynnik pojawiania się nowych pojazdów ---
+        self.spawn_sliders = [
+            RangeInput(
+                x=20,
+                y=40 + i * 60,
+                width=200,
+                height=20,
+                min_val=0.1,
+                max_val=10.0,
+                start_val=1.0,
+                label=f"{road.name} spawn rate"
+            )
+            for i, road in enumerate(self.roads)
+        ]
 
     # --- Getters & setters ---
     def get_running(self):
@@ -102,8 +118,18 @@ class Simulation:
         if not self.automatic_control:
             for button, _ in self.light_buttons:
                 button.draw(screen)
+            for slider in self.spawn_sliders:
+                slider.draw(screen)
 
         if self.running:
+            for road, inp in zip(self.roads, self.spawn_sliders):
+                cars_per_second = inp.value
+                if cars_per_second > 0:
+                    spawn_frequency = int(FPS / cars_per_second)
+                else:
+                    spawn_frequency = 999999
+                road.set_spawn_frequency(spawn_frequency)
+
             for road in self.roads:
                 road.spawn_car(self.cars, self.stops)
                 road.draw(screen)

@@ -28,6 +28,9 @@ while app_running:
                     light.set_state(True)
                 else:
                     light.set_state(False)
+            for slider in sim.spawn_sliders:
+                slider.handle_event(event)
+
 
     sim.update(screen)
     pygame.display.flip()

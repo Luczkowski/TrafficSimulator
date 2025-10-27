@@ -82,7 +82,7 @@ class ToggleAutomaticControlButton(Button):
     def __init__(self, get_automatic_control, set_automatic_control):
         super().__init__(
             WINDOW_WIDTH - 200,
-            20,
+            WINDOW_HEIGHT - 70,
             160,
             40,
             "Automatic mode",
@@ -98,9 +98,9 @@ class ToggleAutomaticControlButton(Button):
             if self.rect.collidepoint(event.pos):
                 self.set_automatic_control(not self.get_automatic_control())
                 if self.get_automatic_control() == True:
-                    self.text = "Automatic control"
+                    self.text = "Automatic mode"
                 else:
-                    self.text = "Manual control"
+                    self.text = "Manual mode"
 
 
 class ToggleButton(Button):

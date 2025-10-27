@@ -63,7 +63,7 @@ class Simulation:
 
         self.light_buttons = []
         button_x = WINDOW_WIDTH - 200
-        button_y = 80
+        button_y = 20
         for i, light in enumerate(self.stops):
             button = ToggleLightButton(
                 x=button_x,
@@ -82,7 +82,7 @@ class Simulation:
                 y=40 + i * 60,
                 width=200,
                 height=20,
-                min_val=0.1,
+                min_val=0,
                 max_val=10.0,
                 start_val=1.0,
                 label=f"{road.name} spawn rate"
@@ -112,39 +112,31 @@ class Simulation:
             light.automatic_control = self.automatic_control
 
     def update(self, screen):
+        # GUI
         for gui_element in self.gui:
             gui_element.draw(screen)
-
         if not self.automatic_control:
             for button, _ in self.light_buttons:
                 button.draw(screen)
             for slider in self.spawn_sliders:
                 slider.draw(screen)
 
+        # Simulation logic
         if self.running:
             for road, inp in zip(self.roads, self.spawn_sliders):
                 cars_per_second = inp.value
-                if cars_per_second > 0:
-                    spawn_frequency = int(FPS / cars_per_second)
-                else:
-                    spawn_frequency = 999999
+                spawn_frequency = int(FPS / cars_per_second) if cars_per_second > 0 else 999999
                 road.set_spawn_frequency(spawn_frequency)
-
-            for road in self.roads:
                 road.spawn_car(self.cars, self.stops)
-                road.draw(screen)
-
             for stop in self.stops:
-                stop.draw(screen)
                 stop.toggle_state()
-
             for car in self.cars[:]:
                 car.update(self.cars, self.roads, self.stops)
-                car.draw(screen)
-        else:
-            for road in self.roads:
-                road.draw(screen)
-            for stop in self.stops:
-                stop.draw(screen)
-            for car in self.cars:
-                car.draw(screen)
+
+        # Drawing
+        for road in self.roads:
+            road.draw(screen)
+        for stop in self.stops:
+            stop.draw(screen)
+        for car in self.cars:
+            car.draw(screen)

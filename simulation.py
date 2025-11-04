@@ -2,6 +2,7 @@ import pygame
 from configuration import *
 from road import Road
 from light import Light
+from clock import LightClock
 from components.gui import (
     Button,
     StopButton,
@@ -29,25 +30,15 @@ class Simulation:
 
         # --- Sygnalizacja świetlna ---
         self.stops = [
-            Light(
-                370, E_LANE + 8, phases=[(2, True), (4, False)], automatic_control=True
-            ),
-            Light(
-                480, W_LANE + 8, phases=[(2, True), (4, False)], automatic_control=True
-            ),
-            Light(
-                S_LANE + 8,
-                270,
-                phases=[(3, False), (2, True), (1, False)],
-                automatic_control=True,
-            ),
-            Light(
-                N_LANE + 8,
-                380,
-                phases=[(3, False), (2, True), (1, False)],
-                automatic_control=True,
-            ),
+            Light(370, E_LANE + 8, 'E', automatic_control=True),
+            Light(480, W_LANE + 8, 'W', automatic_control=True),
+            Light(S_LANE + 8, 270, 'S', automatic_control=True),
+            Light(N_LANE + 8, 380, 'N', automatic_control=True),
         ]
+
+        # --- Kolejka dla świateł ---
+        self.lights_queue = LightClock([(('E', 'W'), 3.0), (('N'), 3.0), (('S'), 1.0)])
+
 
         # --- Pojazdy ---
         self.cars = []
@@ -111,7 +102,7 @@ class Simulation:
         for light in self.stops:
             light.automatic_control = self.automatic_control
 
-    def update(self, screen):
+    def update(self, screen, dt):
         # GUI
         for gui_element in self.gui:
             gui_element.draw(screen)
@@ -123,13 +114,14 @@ class Simulation:
 
         # Simulation logic
         if self.running:
+            self.lights_queue.update(dt)
             for road, inp in zip(self.roads, self.spawn_sliders):
                 cars_per_second = inp.value
                 spawn_frequency = int(FPS / cars_per_second) if cars_per_second > 0 else 999999
                 road.set_spawn_frequency(spawn_frequency)
                 road.spawn_car(self.cars, self.stops)
             for stop in self.stops:
-                stop.toggle_state()
+                stop.check_state(self.lights_queue.get_current_directions())
             for car in self.cars[:]:
                 car.update(self.cars, self.roads, self.stops)
 

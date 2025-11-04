@@ -11,7 +11,7 @@ sim = Simulation()
 
 app_running = True
 while app_running:
-    clock.tick(FPS)
+    dt = clock.tick(FPS) / 1000.0
     screen.fill(GRAY)
 
     for event in pygame.event.get():
@@ -32,7 +32,7 @@ while app_running:
                 slider.handle_event(event)
 
 
-    sim.update(screen)
+    sim.update(screen, dt)
     pygame.display.flip()
 
 pygame.quit()

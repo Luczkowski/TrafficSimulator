@@ -31,7 +31,6 @@ while app_running:
             for slider in sim.spawn_sliders:
                 slider.handle_event(event)
 
-
     sim.update(screen, dt)
     pygame.display.flip()
 

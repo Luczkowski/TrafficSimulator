@@ -3,6 +3,7 @@ from configuration import *
 from road import Road
 from light import Light
 from clock import LightClock
+from car import Car
 from components.gui import (
     Button,
     StopButton,
@@ -13,35 +14,33 @@ from components.gui import (
     RangeInput,
 )
 
-
 class Simulation:
-    def __init__(self):
+    def __init__(self) -> None:
         # --- Stan symulacji ---
         self.running = True
         self.automatic_control = True
 
         # --- Drogi ---
         self.roads = [
-            Road((0, E_LANE), (WINDOW_WIDTH, E_LANE), "E", BLUE, ["N", "S", "E"]),
-            Road((WINDOW_WIDTH, W_LANE), (0, W_LANE), "W", RED, ["N", "S", "W"]),
-            Road((S_LANE, 0), (S_LANE, WINDOW_HEIGHT), "S", GREEN, ["E", "W", "S"]),
-            Road((N_LANE, WINDOW_HEIGHT), (N_LANE, 0), "N", YELLOW, ["E", "W", "N"]),
+            Road((0, int(E_LANE)), (WINDOW_WIDTH, int(E_LANE)), "E", BLUE, ["N", "S", "E"]),
+            Road((WINDOW_WIDTH, int(W_LANE)), (0, int(W_LANE)), "W", RED, ["N", "S", "W"]),
+            Road((int(S_LANE), 0), (int(S_LANE), WINDOW_HEIGHT), "S", GREEN, ["E", "W", "S"]),
+            Road((int(N_LANE), WINDOW_HEIGHT), (int(N_LANE), 0), "N", YELLOW, ["E", "W", "N"]),
         ]
 
         # --- Sygnalizacja świetlna ---
         self.stops = [
-            Light(370, E_LANE + 8, 'E', automatic_control=True),
-            Light(480, W_LANE + 8, 'W', automatic_control=True),
-            Light(S_LANE + 8, 270, 'S', automatic_control=True),
-            Light(N_LANE + 8, 380, 'N', automatic_control=True),
+            Light(370, int(E_LANE + 8), "E"),
+            Light(480, int(W_LANE + 8), "W"),
+            Light(int(S_LANE + 8), 270, "S"),
+            Light(int(N_LANE + 8), 380, "N"),
         ]
 
         # --- Kolejka dla świateł ---
-        self.lights_queue = LightClock([(('E', 'W'), 3.0), (('N'), 3.0), (('S'), 1.0)])
-
+        self.lights_queue = LightClock([(("E", "W"), 3.0), (("N"), 3.0), (("S"), 1.0)])
 
         # --- Pojazdy ---
-        self.cars = []
+        self.cars: list[Car] = []
 
         # --- GUI ---
         self.gui = [
@@ -76,33 +75,33 @@ class Simulation:
                 min_val=0,
                 max_val=10.0,
                 start_val=1.0,
-                label=f"{road.name} spawn rate"
+                label=f"{road.name} spawn rate",
             )
             for i, road in enumerate(self.roads)
         ]
 
     # --- Getters & setters ---
-    def get_running(self):
+    def get_running(self) -> bool:
         return self.running
 
-    def get_automatic_control(self):
+    def get_automatic_control(self) -> bool:
         return self.automatic_control
 
-    def set_running(self, state: bool):
+    def set_running(self, state: bool) -> None:
         self.running = state
 
-    def set_cars(self, new_cars=None):
+    def set_cars(self, new_cars: list[Car] | None = None) -> None:
         if new_cars is None:
             self.cars.clear()
         else:
             self.cars = new_cars
 
-    def set_automatic_control(self, state: bool):
+    def set_automatic_control(self, state: bool) -> None:
         self.automatic_control = state
         for light in self.stops:
             light.automatic_control = self.automatic_control
 
-    def update(self, screen, dt):
+    def update(self, screen: pygame.Surface, dt: float) -> None:
         # GUI
         for gui_element in self.gui:
             gui_element.draw(screen)
@@ -114,14 +113,19 @@ class Simulation:
 
         # Simulation logic
         if self.running:
-            self.lights_queue.update(dt)
+            if self.automatic_control:
+                self.lights_queue.update(dt)
+                for stop in self.stops:
+                    stop.check_state(self.lights_queue.get_current_directions())
+
             for road, inp in zip(self.roads, self.spawn_sliders):
                 cars_per_second = inp.value
-                spawn_frequency = int(FPS / cars_per_second) if cars_per_second > 0 else 999999
+                spawn_frequency = (
+                    int(FPS / cars_per_second) if cars_per_second > 0 else 999999
+                )
                 road.set_spawn_frequency(spawn_frequency)
                 road.spawn_car(self.cars, self.stops)
-            for stop in self.stops:
-                stop.check_state(self.lights_queue.get_current_directions())
+
             for car in self.cars[:]:
                 car.update(self.cars, self.roads, self.stops)
 

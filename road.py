@@ -1,9 +1,9 @@
-import pygame
-
 from typing import List, Tuple
 
-from configuration import *
+import pygame
+
 from car import Car
+from configuration import *
 from light import Light
 
 
@@ -61,9 +61,7 @@ class Road:
     def set_spawn_frequency(self, frequency: int) -> None:
         self.spawn_frequency = frequency
 
-    def spawn_car(
-        self, cars: List["Car"], stops: List["Light"], speed: int = 2
-    ) -> None:
+    def spawn_car(self, cars: List["Car"], stops: List["Light"], speed: int = 2) -> None:
         self.spawn_timer += 1
 
         if self.spawn_timer >= self.spawn_frequency:

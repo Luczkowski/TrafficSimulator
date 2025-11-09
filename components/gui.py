@@ -1,9 +1,8 @@
+from typing import Callable, Tuple
+
 import pygame
 
-from typing import Tuple, Callable
-
 from car import Car
-
 from configuration import *
 
 
@@ -119,7 +118,7 @@ class ToggleAutomaticControlButton(Button):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.rect.collidepoint(event.pos):
                 self.set_automatic_control(not self.get_automatic_control())
-                if self.get_automatic_control() == True:
+                if self.get_automatic_control() is True:
                     self.text = "Automatic mode"
                 else:
                     self.text = "Manual mode"
@@ -138,9 +137,7 @@ class ToggleButton(Button):
         hover_color: Tuple[int, int, int] = (200, 200, 200),
         font_size: int = 24,
     ):
-        super().__init__(
-            x, y, width, height, text_on, color, hover_color, font_size=font_size
-        )
+        super().__init__(x, y, width, height, text_on, color, hover_color, font_size=font_size)
         self.text_on = text_on
         self.text_off = text_off
         self.toggled = False
@@ -230,10 +227,7 @@ class RangeInput:
 
     def _value_to_x(self, value: float) -> float:
         """Convert slider value to x-position."""
-        return (
-            self.x
-            + ((value - self.min_val) / (self.max_val - self.min_val)) * self.width
-        )
+        return self.x + ((value - self.min_val) / (self.max_val - self.min_val)) * self.width
 
     def _x_to_value(self, x: float) -> float:
         """Convert x-position back to slider value."""
@@ -242,9 +236,7 @@ class RangeInput:
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if abs(event.pos[0] - self.knob_x) < 10 and self.slider_rect.collidepoint(
-                event.pos
-            ):
+            if abs(event.pos[0] - self.knob_x) < 10 and self.slider_rect.collidepoint(event.pos):
                 self.dragging = True
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.dragging = False
@@ -256,9 +248,7 @@ class RangeInput:
         pygame.draw.rect(screen, (200, 200, 200), self.slider_rect)
         pygame.draw.rect(screen, (0, 0, 0), self.slider_rect, 2)
 
-        pygame.draw.circle(
-            screen, (100, 100, 255), (int(self.knob_x), self.y + self.height // 2), 8
-        )
+        pygame.draw.circle(screen, (100, 100, 255), (int(self.knob_x), self.y + self.height // 2), 8)
 
         label_text = f"{self.label}: {self.value:.1f} cars/s"
         text_surf = self.font.render(label_text, True, (0, 0, 0))

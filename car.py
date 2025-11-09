@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import pygame
 import math
 import random
+from typing import TYPE_CHECKING, List, Tuple
 
-from typing import TYPE_CHECKING, Tuple, List
+import pygame
 
 if TYPE_CHECKING:
     from road import Road
 
-from light import Light
-
 from configuration import *
+from light import Light
 
 
 class Car:
@@ -45,7 +44,7 @@ class Car:
             stop_rect = pygame.Rect(stop.x, stop.y, 1, 1)
             if my_rect.colliderect(stop_rect):
                 return True
-            if my_future_rect.colliderect(stop_rect) and stop.state == False:
+            if my_future_rect.colliderect(stop_rect) and stop.state is False:
                 return False
         return True
 

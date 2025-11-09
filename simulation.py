@@ -1,18 +1,12 @@
 import pygame
-from configuration import *
-from road import Road
-from light import Light
-from clock import LightClock
+
 from car import Car
-from components.gui import (
-    Button,
-    StopButton,
-    RestartButton,
-    ToggleAutomaticControlButton,
-    ToggleButton,
-    ToggleLightButton,
-    RangeInput,
-)
+from clock import LightClock
+from components.gui import RangeInput, RestartButton, StopButton, ToggleAutomaticControlButton, ToggleLightButton
+from configuration import *
+from light import Light
+from road import Road
+
 
 class Simulation:
     def __init__(self) -> None:
@@ -46,9 +40,7 @@ class Simulation:
         self.gui = [
             StopButton(self.get_running, self.set_running),
             RestartButton(self.set_cars),
-            ToggleAutomaticControlButton(
-                self.get_automatic_control, self.set_automatic_control
-            ),
+            ToggleAutomaticControlButton(self.get_automatic_control, self.set_automatic_control),
         ]
 
         self.light_buttons = []
@@ -120,9 +112,7 @@ class Simulation:
 
             for road, inp in zip(self.roads, self.spawn_sliders):
                 cars_per_second = inp.value
-                spawn_frequency = (
-                    int(FPS / cars_per_second) if cars_per_second > 0 else 999999
-                )
+                spawn_frequency = int(FPS / cars_per_second) if cars_per_second > 0 else 999999
                 road.set_spawn_frequency(spawn_frequency)
                 road.spawn_car(self.cars, self.stops)
 

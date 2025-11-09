@@ -1,5 +1,5 @@
-import time
 import pygame
+
 from configuration import *
 
 

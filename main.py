@@ -1,5 +1,6 @@
 import pygame
-from configuration import *
+
+from configuration import FPS, GRAY, WINDOW_HEIGHT, WINDOW_WIDTH
 from simulation import Simulation
 
 pygame.init()

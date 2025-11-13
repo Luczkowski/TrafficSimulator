@@ -1,4 +1,7 @@
-from typing import List, Tuple
+import math
+import random
+import time
+from typing import List, Optional, Tuple
 
 import pygame
 
@@ -14,58 +17,75 @@ class Road:
         end: Tuple[int, int],
         name: str,
         color: Tuple[int, int, int],
-        directions: List[str] | None = None,
-        spawn_frequency: int = 60,
-    ):
+        directions: Optional[List[str]] = None,
+        spawn_rate: float = 1.0,
+    ) -> None:
         self.start = start
         self.end = end
         self.name = name
         self.color = color
+        self.directions = list(directions) if directions else []
 
-        self.directions = list(directions) if directions is not None else []
+        # Mean spawn rate (cars per second)
+        self.spawn_rate = spawn_rate
+        self.default_spawn_rate: float = spawn_rate
 
-        # to jest automatyczne dodawanie domyślnego kierunku drogi do możliwych celów
-        # jeśli to wyłączymy, to domyślny kierunek drogi musi być uwzględniony przy tworzeniu drogi
-        # self.directions.append(name)
+        # Time-based spawning variables
+        self.time_since_last_spawn = 0.0
+        if self.spawn_rate > 0:
+            self.next_spawn_interval = random.expovariate(self.spawn_rate)
+        else:
+            self.next_spawn_interval = math.inf
 
-        self.spawn_frequency = spawn_frequency
-        self.spawn_timer = 0
+        self.last_update_time = time.time()
 
-    def __str__(self) -> str:
-        return f"Road {self.name} with directions {self.directions}"
+    def set_spawn_rate(self, rate: float) -> None:
+        self.spawn_rate = rate
+
+        if self.spawn_rate > 0:
+            self.next_spawn_interval = random.expovariate(self.spawn_rate)
+        else:
+            self.next_spawn_interval = math.inf
+
+    def spawn_car(
+        self,
+        cars: List["Car"],
+        stops: List["Light"],
+        dt: float,
+        speed: float = CAR_SPEED,
+    ) -> None:
+
+        # Accumulate elapsed time (seconds)
+        self.time_since_last_spawn += dt
+
+        # Check if it's time to spawn a new car
+        if self.time_since_last_spawn >= self.next_spawn_interval:
+            car = Car(self, color=self.color, speed=speed)
+
+            # Only add if it can safely move
+            if car.can_move(cars, stops):
+                cars.append(car)
+
+            # Reset timer and draw new random waiting time
+            self.time_since_last_spawn = 0.0
+            if self.spawn_rate > 0:
+                self.next_spawn_interval = random.expovariate(self.spawn_rate)
+            else:
+                self.next_spawn_interval = math.inf
 
     def draw(self, surface: pygame.Surface) -> None:
-        # draw first line
         pygame.draw.line(surface, WHITE, self.start, self.end)
-
-        # second line - horizontal roads
         if self.start[1] == self.end[1]:
             pygame.draw.line(
                 surface,
                 WHITE,
-                (self.start[0], self.start[1] + CAR_SIZE),
-                (self.end[0], self.end[1] + CAR_SIZE),
+                (self.start[0], self.start[1] + CAR_SIZE + 1),
+                (self.end[0], self.end[1] + CAR_SIZE + 1),
             )
-
-        # second line - vertical roads
         elif self.start[0] == self.end[0]:
             pygame.draw.line(
                 surface,
                 WHITE,
-                (self.start[0] + CAR_SIZE, self.start[1]),
-                (self.end[0] + CAR_SIZE, self.end[1]),
+                (self.start[0] + CAR_SIZE + 1, self.start[1]),
+                (self.end[0] + CAR_SIZE + 1, self.end[1]),
             )
-
-        # TODO add diagonal roads
-
-    def set_spawn_frequency(self, frequency: int) -> None:
-        self.spawn_frequency = frequency
-
-    def spawn_car(self, cars: List["Car"], stops: List["Light"], speed: int = 2) -> None:
-        self.spawn_timer += 1
-
-        if self.spawn_timer >= self.spawn_frequency:
-            car = Car(self, color=self.color, speed=speed)
-            if car.can_move(cars, stops):
-                cars.append(car)
-            self.spawn_timer = 0

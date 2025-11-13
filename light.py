@@ -4,7 +4,14 @@ from configuration import *
 
 
 class Light:
-    def __init__(self, x: int, y: int, direction: str, automatic_control: bool = True):
+    x: int
+    y: int
+    direction: str
+    automatic_control: bool
+
+    def __init__(
+        self, x: int, y: int, direction: str, automatic_control: bool = True
+    ):
         self.x: int = x
         self.y: int = y
         self.direction: str = direction  # renamed from name to direction

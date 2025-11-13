@@ -25,10 +25,8 @@ while app_running:
         if not sim.automatic_control:
             for button, light in sim.light_buttons:
                 button.handle_event(event)
-                if button.toggled:
-                    light.set_state(True)
-                else:
-                    light.set_state(False)
+                light.set_state(button.toggled)
+
             for slider in sim.spawn_sliders:
                 slider.handle_event(event)
 

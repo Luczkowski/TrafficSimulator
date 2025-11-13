@@ -2,7 +2,13 @@ import pygame
 
 from car import Car
 from clock import LightClock
-from components.gui import RangeInput, RestartButton, StopButton, ToggleAutomaticControlButton, ToggleLightButton
+from components.gui import (
+    RangeInput,
+    RestartButton,
+    StopButton,
+    ToggleAutomaticControlButton,
+    ToggleLightButton,
+)
 from configuration import *
 from light import Light
 from road import Road
@@ -10,37 +16,182 @@ from road import Road
 
 class Simulation:
     def __init__(self) -> None:
-        # --- Stan symulacji ---
+        # --- Simulation states ---
         self.running = True
         self.automatic_control = True
 
-        # --- Drogi ---
+        # --- Roads ---
         self.roads = [
-            Road((0, int(E_LANE)), (WINDOW_WIDTH, int(E_LANE)), "E", BLUE, ["N", "S", "E"]),
-            Road((WINDOW_WIDTH, int(W_LANE)), (0, int(W_LANE)), "W", RED, ["N", "S", "W"]),
-            Road((int(S_LANE), 0), (int(S_LANE), WINDOW_HEIGHT), "S", GREEN, ["E", "W", "S"]),
-            Road((int(N_LANE), WINDOW_HEIGHT), (int(N_LANE), 0), "N", YELLOW, ["E", "W", "N"]),
+            Road(
+                (int(S_LANE), 0),
+                (int(S_LANE), WINDOW_HEIGHT),
+                "CHLOPSKA S",
+                (4, 0, 252),
+                [
+                    "CHLOPSKA N",
+                    "CHLOPSKA S",
+                    "PIASTOWSKA E",
+                    "PIASTOWSKA W",
+                    "JAGIELLONSKA E",
+                    "JAGIELLONSKA W",
+                    "KOLOBRZESKA E",
+                    "KOLOBRZESKA W",
+                ],
+                spawn_rate=0.75,
+            ),
+            Road(
+                (int(N_LANE), WINDOW_HEIGHT),
+                (int(N_LANE), 0),
+                "CHLOPSKA N",
+                (66, 63, 252),
+                [
+                    "CHLOPSKA N",
+                    "CHLOPSKA S",
+                    "PIASTOWSKA E",
+                    "PIASTOWSKA W",
+                    "JAGIELLONSKA E",
+                    "JAGIELLONSKA W",
+                    "KOLOBRZESKA E",
+                    "KOLOBRZESKA W",
+                ],
+                spawn_rate=1.1,
+            ),
+            Road(
+                (WINDOW_WIDTH, 200),
+                (0, 200),
+                "PIASTOWSKA W",
+                (2, 210, 252),
+                [
+                    "CHLOPSKA N",
+                    "CHLOPSKA S",
+                    "PIASTOWSKA E",
+                    "PIASTOWSKA W",
+                    "JAGIELLONSKA E",
+                    "JAGIELLONSKA W",
+                    "KOLOBRZESKA E",
+                    "KOLOBRZESKA W",
+                ],
+                spawn_rate=0.1,
+            ),
+            Road(
+                (0, 240),
+                (WINDOW_WIDTH, 240),
+                "PIASTOWSKA E",
+                (70, 222, 252),
+                [
+                    "CHLOPSKA N",
+                    "CHLOPSKA S",
+                    "PIASTOWSKA E",
+                    "JAGIELLONSKA E",
+                    "JAGIELLONSKA W",
+                    "KOLOBRZESKA E",
+                    "KOLOBRZESKA W",
+                ],
+                spawn_rate=0.1,
+            ),
+            Road(
+                (WINDOW_WIDTH, 400),
+                (0, 400),
+                "JAGIELLONSKA W",
+                (2, 152, 252),
+                [
+                    "CHLOPSKA N",
+                    "CHLOPSKA S",
+                    "PIASTOWSKA E",
+                    "PIASTOWSKA W",
+                    "JAGIELLONSKA E",
+                    "JAGIELLONSKA W",
+                    "KOLOBRZESKA E",
+                    "KOLOBRZESKA W",
+                ],
+            ),
+            Road(
+                (0, 440),
+                (WINDOW_WIDTH, 440),
+                "JAGIELLONSKA E",
+                (70, 179, 252),
+                [
+                    "CHLOPSKA N",
+                    "CHLOPSKA S",
+                    "PIASTOWSKA E",
+                    "PIASTOWSKA W",
+                    "JAGIELLONSKA E",
+                    "JAGIELLONSKA W",
+                    "KOLOBRZESKA E",
+                    "KOLOBRZESKA W",
+                ],
+            ),
+            Road(
+                (WINDOW_WIDTH, 600),
+                (0, 600),
+                "KOLOBRZESKA W",
+                (2, 81, 252),
+                [
+                    "CHLOPSKA N",
+                    "CHLOPSKA S",
+                    "PIASTOWSKA E",
+                    "PIASTOWSKA W",
+                    "JAGIELLONSKA E",
+                    "JAGIELLONSKA W",
+                    "KOLOBRZESKA E",
+                    "KOLOBRZESKA W",
+                ],
+                spawn_rate=1.25,
+            ),
+            Road(
+                (0, 640),
+                (WINDOW_WIDTH, 640),
+                "KOLOBRZESKA E",
+                (63, 123, 252),
+                [
+                    "CHLOPSKA N",
+                    "CHLOPSKA S",
+                    "PIASTOWSKA E",
+                    "PIASTOWSKA W",
+                    "JAGIELLONSKA E",
+                    "JAGIELLONSKA W",
+                    "KOLOBRZESKA E",
+                    "KOLOBRZESKA W",
+                ],
+                spawn_rate=1.25,
+            ),
         ]
 
-        # --- Sygnalizacja świetlna ---
+        # --- Traffic lights ---
         self.stops = [
-            Light(370, int(E_LANE + 8), "E"),
-            Light(480, int(W_LANE + 8), "W"),
-            Light(int(S_LANE + 8), 270, "S"),
-            Light(int(N_LANE + 8), 380, "N"),
+            # CHLOPSKA
+            Light(792, 180, "S"),
+            Light(792, 380, "S"),
+            Light(792, 580, "S"),
+            Light(850, 264, "N"),
+            Light(850, 464, "N"),
+            Light(850, 664, "N"),
+            # Piastowska
+            Light(874, 202, "W"),
+            Light(772, 242, "E"),
+            # JAGIELLONSKA
+            Light(874, 402, "W"),
+            Light(772, 442, "E"),
+            # KOLOBRZESKA
+            Light(874, 602, "W"),
+            Light(772, 642, "E"),
         ]
 
-        # --- Kolejka dla świateł ---
-        self.lights_queue = LightClock([(("E", "W"), 3.0), (("N"), 3.0), (("S"), 1.0)])
+        # --- Lights queues ---
+        self.lights_queue = LightClock(
+            [(("N", "S"), 10.0), (None, 2), (("E", "W"), 6.0), (None, 2)]
+        )
 
-        # --- Pojazdy ---
+        # --- Cars ---
         self.cars: list[Car] = []
 
         # --- GUI ---
         self.gui = [
             StopButton(self.get_running, self.set_running),
             RestartButton(self.set_cars),
-            ToggleAutomaticControlButton(self.get_automatic_control, self.set_automatic_control),
+            ToggleAutomaticControlButton(
+                self.get_automatic_control, self.set_automatic_control
+            ),
         ]
 
         self.light_buttons = []
@@ -57,7 +208,7 @@ class Simulation:
             )
             self.light_buttons.append((button, light))
 
-        # --- Współczynnik pojawiania się nowych pojazdów ---
+        # --- Spawn rate sliders ---
         self.spawn_sliders = [
             RangeInput(
                 x=20,
@@ -66,7 +217,7 @@ class Simulation:
                 height=20,
                 min_val=0,
                 max_val=10.0,
-                start_val=1.0,
+                start_val=self.roads[i].spawn_rate,
                 label=f"{road.name} spawn rate",
             )
             for i, road in enumerate(self.roads)
@@ -93,8 +244,16 @@ class Simulation:
         for light in self.stops:
             light.automatic_control = self.automatic_control
 
+        if self.automatic_control:
+            for i, road in enumerate(self.roads):
+                road.set_spawn_rate(road.default_spawn_rate)
+                if i < len(self.spawn_sliders):
+                    self.spawn_sliders[i].value = road.spawn_rate
+                    self.spawn_sliders[i].knob_x = self.spawn_sliders[
+                        i
+                    ]._value_to_x(self.spawn_sliders[i].value)
+
     def update(self, screen: pygame.Surface, dt: float) -> None:
-        # GUI
         for gui_element in self.gui:
             gui_element.draw(screen)
         if not self.automatic_control:
@@ -103,23 +262,21 @@ class Simulation:
             for slider in self.spawn_sliders:
                 slider.draw(screen)
 
-        # Simulation logic
+        # SIMULATION LOGIC
         if self.running:
             if self.automatic_control:
                 self.lights_queue.update(dt)
                 for stop in self.stops:
                     stop.check_state(self.lights_queue.get_current_directions())
 
-            for road, inp in zip(self.roads, self.spawn_sliders):
-                cars_per_second = inp.value
-                spawn_frequency = int(FPS / cars_per_second) if cars_per_second > 0 else 999999
-                road.set_spawn_frequency(spawn_frequency)
-                road.spawn_car(self.cars, self.stops)
+            for road, slider in zip(self.roads, self.spawn_sliders):
+                if abs(road.spawn_rate - slider.value) > 1e-6:  # rate changed
+                    road.set_spawn_rate(slider.value)
+                road.spawn_car(self.cars, self.stops, dt)
 
             for car in self.cars[:]:
                 car.update(self.cars, self.roads, self.stops)
 
-        # Drawing
         for road in self.roads:
             road.draw(screen)
         for stop in self.stops:

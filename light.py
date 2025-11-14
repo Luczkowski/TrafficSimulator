@@ -1,33 +1,37 @@
-import time
 import pygame
+
 from configuration import *
 
 
 class Light:
-    def __init__(self, x, y, phases=None, automatic_control=True):
-        self.x = x
-        self.y = y
-        self.phases = phases if phases else [(2, True), (2, False)]
-        self.current_phase = 0
-        self.state = self.phases[0][1]
-        self.last_toggle_time = time.time()
-        self.automatic_control = automatic_control
+    x: int
+    y: int
+    direction: str
+    automatic_control: bool
 
-    def toggle_state(self):
-        if self.automatic_control:
-            current_time = time.time()
-            phase_duration, _ = self.phases[self.current_phase]
-            if current_time - self.last_toggle_time >= phase_duration:
-                self.current_phase = (self.current_phase + 1) % len(self.phases)
-                self.state = self.phases[self.current_phase][1]
-                self.last_toggle_time = current_time
+    def __init__(
+        self, x: int, y: int, direction: str, automatic_control: bool = True
+    ):
+        self.x: int = x
+        self.y: int = y
+        self.direction: str = direction  # renamed from name to direction
+        self.state: bool = True
+        self.automatic_control: bool = automatic_control
 
-    def draw(self, surface):
+    def check_state(self, directions: str | tuple[str, ...] | None) -> None:
+        if directions is None:
+            self.state = False
+        elif isinstance(directions, str):
+            self.state = self.direction == directions
+        else:
+            self.state = self.direction in directions
+
+    def draw(self, surface: pygame.Surface) -> None:
         color = GREEN if self.state else RED
         pygame.draw.rect(surface, color, (self.x, self.y, 8, 8))
 
-    def get_state(self):
+    def get_state(self) -> bool:
         return self.state
-    
-    def set_state(self, state: bool):
+
+    def set_state(self, state: bool) -> None:
         self.state = state

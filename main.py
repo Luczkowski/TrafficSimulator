@@ -1,5 +1,6 @@
 import pygame
-from configuration import *
+
+from configuration import FPS, GRAY, WINDOW_HEIGHT, WINDOW_WIDTH
 from simulation import Simulation
 
 pygame.init()
@@ -11,7 +12,7 @@ sim = Simulation()
 
 app_running = True
 while app_running:
-    clock.tick(FPS)
+    dt = clock.tick(FPS) / 1000.0
     screen.fill(GRAY)
 
     for event in pygame.event.get():
@@ -24,15 +25,12 @@ while app_running:
         if not sim.automatic_control:
             for button, light in sim.light_buttons:
                 button.handle_event(event)
-                if button.toggled:
-                    light.set_state(True)
-                else:
-                    light.set_state(False)
+                light.set_state(button.toggled)
+
             for slider in sim.spawn_sliders:
                 slider.handle_event(event)
 
-
-    sim.update(screen)
+    sim.update(screen, dt)
     pygame.display.flip()
 
 pygame.quit()

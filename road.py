@@ -17,14 +17,12 @@ class Road:
         end: Tuple[int, int],
         name: str,
         color: Tuple[int, int, int],
-        directions: Optional[List[str]] = None,
         spawn_rate: float = 1.0,
     ) -> None:
         self.start = start
         self.end = end
         self.name = name
         self.color = color
-        self.directions = list(directions) if directions else []
 
         # Mean spawn rate (cars per second)
         self.spawn_rate = spawn_rate

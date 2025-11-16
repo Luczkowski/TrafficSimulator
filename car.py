@@ -52,6 +52,45 @@ class Car:
                 other.is_stopped == True:
                 return True
         return False
+    
+    def orientation(self, A, B, C) -> int:
+        val = (B[1] - A[1]) * (C[0] - B[0]) - (B[0] - A[0]) * (C[1] - B[1])
+        if val == 0:
+            return 0
+        elif val > 0:
+            return 1
+        else:
+            return 2
+        
+    def if_cross(self, A, B, C, D) -> bool:
+        o1 = self.orientation(A, B, C)
+        o2 = self.orientation(A, B, D)
+        o3 = self.orientation(C, D, A)
+        o4 = self.orientation(C, D, B)
+
+        if o1 != o2 and o3 != o4:
+            return True
+        return False
+    
+    def crossroad_point(self, A, B, C, D) -> Tuple[float, float]:
+        a1 = B[1] - A[1]
+        b1 = A[0] - B[0]
+        c1 = a1 * A[0] + b1 * A[1]
+
+        a2 = D[1] - C[1]
+        b2 = C[0] - D[0]
+        c2 = a2 * C[0] + b2 * C[1]
+
+        det = a1 * b2 - a2 * b1
+        if det == 0:
+            return None
+        
+        Px = (b2 * c1 - b1 * c2) / det
+        Py = (a1 * c2 - a2 * c1) / det
+        return (Px, Py)
+    
+    def distance(self, A, P) -> float:
+        return math.sqrt((P[0] - A[0])**2 + (P[1] - A[1])**2)
 
     def can_move(self, cars: List[Car], stops: List[Light]) -> bool:
         future_x = self.x + self.vx
@@ -71,27 +110,35 @@ class Car:
                 return False
             
         # Crossroad check
-        for road in self.roads:
-            if road == self.road:
-                continue
-            Ax, Ay = road.start[0], road.start[1]
-            Bx, By = road.end[0], road.end[1]
-            Cx, Cy = self.x, self.y
-            nominator = abs((Bx - Ax) * (Cy - Ay) - (By - Ay) * (Cx - Ax))
-            denominator = math.sqrt((By - Ay)**2 + (Bx - Ax)**2)
-            distance = nominator / denominator
+        # for road in self.roads:
+        #     if road == self.road:
+        #         continue
+            # Ax, Ay = road.start[0], road.start[1]
+            # Bx, By = road.end[0], road.end[1]
+            # Cx, Cy = self.x, self.y
+            # nominator = abs((Bx - Ax) * (Cy - Ay) - (By - Ay) * (Cx - Ax))
+            # denominator = math.sqrt((By - Ay)**2 + (Bx - Ax)**2)
+            # distance = nominator / denominator
 
-            to_car_x = Cx - Ax
-            to_car_y = Cy - Ay
-            dot_product = to_car_x * self.vx + to_car_y * self.vy
+            # to_car_x = Cx - Ax
+            # to_car_y = Cy - Ay
+            # dot_product = to_car_x * self.vx + to_car_y * self.vy
 
-            # If car is close to crossroad, check if there's a car ahead within 2 car sizes
-            if distance < CAR_SIZE + COLLISION_MARGIN and \
-                dot_product > 0 and \
-                self.is_car_ahead_in_range(cars, 2 * CAR_SIZE):
-                self.is_stopped = True
-                return False
+            # # If car is close to crossroad, check if there's a car ahead within 2 car sizes
+            # if distance < CAR_SIZE + COLLISION_MARGIN and \
+            #     dot_product > 0 and \
+            #     self.is_car_ahead_in_range(cars, 2 * CAR_SIZE):
+            #     self.is_stopped = True
+            #     return False
 
+            # if self.if_cross(road.start, road.end, (self.x, self.y), self.road.end):
+            #     P = self.crossroad_point(road.start, road.end, (self.x, self.y), self.road.end)
+            #     distance = self.distance((self.x, self.y), P)
+            #     if P and distance < CAR_SIZE + COLLISION_MARGIN and \
+            #         self.is_car_ahead_in_range(cars, 2 * CAR_SIZE):
+            #         self.is_stopped = True
+            #         return False
+            
 
         # Stoplight check
         for stop in stops:

@@ -272,7 +272,7 @@ class Simulation:
             for road, slider in zip(self.roads, self.spawn_sliders):
                 if abs(road.spawn_rate - slider.value) > 1e-6:  # rate changed
                     road.set_spawn_rate(slider.value)
-                road.spawn_car(self.cars, self.stops, dt)
+                road.spawn_car(self.cars, self.stops, self.roads, dt)
 
             for car in self.cars[:]:
                 car.update(self.cars, self.roads, self.stops)

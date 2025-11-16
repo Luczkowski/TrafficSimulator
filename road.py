@@ -51,6 +51,7 @@ class Road:
         self,
         cars: List["Car"],
         stops: List["Light"],
+        roads: List["Road"],
         dt: float,
         speed: float = CAR_SPEED,
     ) -> None:
@@ -60,7 +61,7 @@ class Road:
 
         # Check if it's time to spawn a new car
         if self.time_since_last_spawn >= self.next_spawn_interval:
-            car = Car(self, color=self.color, speed=speed)
+            car = Car(self, roads=roads, color=self.color, speed=speed)
 
             # Only add if it can safely move
             if car.can_move(cars, stops):
@@ -74,18 +75,23 @@ class Road:
                 self.next_spawn_interval = math.inf
 
     def draw(self, surface: pygame.Surface) -> None:
-        pygame.draw.line(surface, WHITE, self.start, self.end)
+        # Offset lines by half of CAR_SIZE on both sides of the road center
+        half_offset = int(round(CAR_SIZE / 2))
+
         if self.start[1] == self.end[1]:
-            pygame.draw.line(
-                surface,
-                WHITE,
-                (self.start[0], self.start[1] + CAR_SIZE + 1),
-                (self.end[0], self.end[1] + CAR_SIZE + 1),
-            )
+            # horizontal road
+            y_center = self.start[1]
+            y1 = y_center - half_offset -1
+            y2 = y_center + half_offset
+            pygame.draw.line(surface, WHITE, (self.start[0], y1), (self.end[0], y1))
+            pygame.draw.line(surface, WHITE, (self.start[0], y2), (self.end[0], y2))
         elif self.start[0] == self.end[0]:
-            pygame.draw.line(
-                surface,
-                WHITE,
-                (self.start[0] + CAR_SIZE + 1, self.start[1]),
-                (self.end[0] + CAR_SIZE + 1, self.end[1]),
-            )
+            # vertical road
+            x_center = self.start[0]
+            x1 = x_center - half_offset - 1
+            x2 = x_center + half_offset
+            pygame.draw.line(surface, WHITE, (x1, self.start[1]), (x1, self.end[1]))
+            pygame.draw.line(surface, WHITE, (x2, self.start[1]), (x2, self.end[1]))
+        else:
+            # fallback: draw center line for non-axis-aligned roads
+            pygame.draw.line(surface, WHITE, self.start, self.end)

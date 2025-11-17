@@ -27,16 +27,6 @@ class Simulation:
                 (int(S_LANE), WINDOW_HEIGHT),
                 "CHLOPSKA S",
                 (4, 0, 252),
-                [
-                    "CHLOPSKA N",
-                    "CHLOPSKA S",
-                    "PIASTOWSKA E",
-                    "PIASTOWSKA W",
-                    "JAGIELLONSKA E",
-                    "JAGIELLONSKA W",
-                    "KOLOBRZESKA E",
-                    "KOLOBRZESKA W",
-                ],
                 spawn_rate=0.75,
             ),
             Road(
@@ -44,16 +34,6 @@ class Simulation:
                 (int(N_LANE), 0),
                 "CHLOPSKA N",
                 (66, 63, 252),
-                [
-                    "CHLOPSKA N",
-                    "CHLOPSKA S",
-                    "PIASTOWSKA E",
-                    "PIASTOWSKA W",
-                    "JAGIELLONSKA E",
-                    "JAGIELLONSKA W",
-                    "KOLOBRZESKA E",
-                    "KOLOBRZESKA W",
-                ],
                 spawn_rate=1.1,
             ),
             Road(
@@ -61,16 +41,6 @@ class Simulation:
                 (0, 200),
                 "PIASTOWSKA W",
                 (2, 210, 252),
-                [
-                    "CHLOPSKA N",
-                    "CHLOPSKA S",
-                    "PIASTOWSKA E",
-                    "PIASTOWSKA W",
-                    "JAGIELLONSKA E",
-                    "JAGIELLONSKA W",
-                    "KOLOBRZESKA E",
-                    "KOLOBRZESKA W",
-                ],
                 spawn_rate=0.1,
             ),
             Road(
@@ -78,15 +48,6 @@ class Simulation:
                 (WINDOW_WIDTH, 240),
                 "PIASTOWSKA E",
                 (70, 222, 252),
-                [
-                    "CHLOPSKA N",
-                    "CHLOPSKA S",
-                    "PIASTOWSKA E",
-                    "JAGIELLONSKA E",
-                    "JAGIELLONSKA W",
-                    "KOLOBRZESKA E",
-                    "KOLOBRZESKA W",
-                ],
                 spawn_rate=0.1,
             ),
             Road(
@@ -94,48 +55,18 @@ class Simulation:
                 (0, 400),
                 "JAGIELLONSKA W",
                 (2, 152, 252),
-                [
-                    "CHLOPSKA N",
-                    "CHLOPSKA S",
-                    "PIASTOWSKA E",
-                    "PIASTOWSKA W",
-                    "JAGIELLONSKA E",
-                    "JAGIELLONSKA W",
-                    "KOLOBRZESKA E",
-                    "KOLOBRZESKA W",
-                ],
             ),
             Road(
                 (0, 440),
                 (WINDOW_WIDTH, 440),
                 "JAGIELLONSKA E",
                 (70, 179, 252),
-                [
-                    "CHLOPSKA N",
-                    "CHLOPSKA S",
-                    "PIASTOWSKA E",
-                    "PIASTOWSKA W",
-                    "JAGIELLONSKA E",
-                    "JAGIELLONSKA W",
-                    "KOLOBRZESKA E",
-                    "KOLOBRZESKA W",
-                ],
             ),
             Road(
                 (WINDOW_WIDTH, 600),
                 (0, 600),
                 "KOLOBRZESKA W",
                 (2, 81, 252),
-                [
-                    "CHLOPSKA N",
-                    "CHLOPSKA S",
-                    "PIASTOWSKA E",
-                    "PIASTOWSKA W",
-                    "JAGIELLONSKA E",
-                    "JAGIELLONSKA W",
-                    "KOLOBRZESKA E",
-                    "KOLOBRZESKA W",
-                ],
                 spawn_rate=1.25,
             ),
             Road(
@@ -143,16 +74,6 @@ class Simulation:
                 (WINDOW_WIDTH, 640),
                 "KOLOBRZESKA E",
                 (63, 123, 252),
-                [
-                    "CHLOPSKA N",
-                    "CHLOPSKA S",
-                    "PIASTOWSKA E",
-                    "PIASTOWSKA W",
-                    "JAGIELLONSKA E",
-                    "JAGIELLONSKA W",
-                    "KOLOBRZESKA E",
-                    "KOLOBRZESKA W",
-                ],
                 spawn_rate=1.25,
             ),
         ]
@@ -272,7 +193,7 @@ class Simulation:
             for road, slider in zip(self.roads, self.spawn_sliders):
                 if abs(road.spawn_rate - slider.value) > 1e-6:  # rate changed
                     road.set_spawn_rate(slider.value)
-                road.spawn_car(self.cars, self.stops, dt)
+                road.spawn_car(self.cars, self.stops, self.roads, dt)
 
             for car in self.cars[:]:
                 car.update(self.cars, self.roads, self.stops)

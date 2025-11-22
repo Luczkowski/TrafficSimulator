@@ -22,8 +22,7 @@ class Car:
         self.x, self.y = map(float, road.start)
         self.color = color
         self.speed = speed
-        #self.direction = random.choice(roads).name
-        self.direction = road.name
+        self.direction = random.choice(roads).name
         self.is_stopped = False
 
         dx = road.end[0] - road.start[0]
@@ -39,7 +38,6 @@ class Car:
         return math.sqrt((P[0] - A[0])**2 + (P[1] - A[1])**2)
 
     def is_stopped_car_after_point(self, P, cars: List[Car], max_dist: float) -> bool:
-        """Check if there is a stopped car on this road starting from point P towards road.end within max_dist."""
         if P is None:
             return False
 
@@ -141,28 +139,10 @@ class Car:
         for road in self.roads:
             if road == self.road:
                 continue
-            # Ax, Ay = road.start[0], road.start[1]
-            # Bx, By = road.end[0], road.end[1]
-            # Cx, Cy = self.x, self.y
-            # nominator = abs((Bx - Ax) * (Cy - Ay) - (By - Ay) * (Cx - Ax))
-            # denominator = math.sqrt((By - Ay)**2 + (Bx - Ax)**2)
-            # distance = nominator / denominator
-
-            # to_car_x = Cx - Ax
-            # to_car_y = Cy - Ay
-            # dot_product = to_car_x * self.vx + to_car_y * self.vy
-
-            # # If car is close to crossroad, check if there's a car ahead within 2 car sizes
-            # if distance < CAR_SIZE + COLLISION_MARGIN and \
-            #     dot_product > 0 and \
-            #     self.is_car_ahead_in_range(cars, 2 * CAR_SIZE):
-            #     self.is_stopped = True
-            #     return False
 
             if self.if_cross(road.start, road.end, (self.x, self.y), self.road.end):
                 P = self.crossroad_point(road.start, road.end, (self.x, self.y), self.road.end)
                 distance = self.distance((self.x, self.y), P)
-                # jeśli od punktu skrzyżowania w kierunku końca tej drogi w odległości jednego samochodu jest stojący samochód -> zatrzymaj
                 if P and distance < CAR_SIZE + 2*COLLISION_MARGIN and \
                     self.is_stopped_car_after_point(P, cars, CAR_SIZE + 2*COLLISION_MARGIN):
                     self.is_stopped = True
